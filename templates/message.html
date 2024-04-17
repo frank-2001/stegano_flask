@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='message.css') }}">
+
+</head>
+<body>
+    <header>
+        MESSAGERIE CRYPTEE
+    </header>
+    <section>
+        <section class="messagerie">
+            <div class="title">
+                MESSAGES
+            </div>
+            <div class="messages">
+                <p></p>
+                <div>
+                </div>
+            </div>
+        </section>
+        <section class="list-etudiant">
+            <div class="title">
+                ETUDIANTS
+            </div>
+            <div id="list">
+
+            </div>
+        </section>
+        <section class="new-message">
+            <div class="title">
+                NOUVEAU MESSAGE
+            </div>
+            <div class="form">
+                <div>
+                    <span>Destinateur : </span>
+                    <span id="destinateur">-</span>
+                </div>
+                <form id="form" method="get">
+                    <input type="number" name="destinateur" placeholder="ID etudiant" readonly required>
+                    <textarea name="message" id="" cols="30" rows="10" required placeholder="Message"></textarea>
+                    <button>valider</button>
+                </form>
+            </div>
+        </section>
+    
+    </section>
+    <script src="{{ url_for('static', filename='jquery-3.7.1.min.js') }}"></script>
+    <script>
+        function formToDic(form) {
+            let dict={}
+            for(var i of form.entries()){
+                dict[i[0]]=i[1];
+            }
+            return dict
+        }
+        let etudiants=[]
+        $.get("/select/students/0",
+            function (data, textStatus, jqXHR) {
+                etudiants=data
+                data.forEach((s,i) => {
+                    $("#list").append(`<div class="student" onclick="student(${i})">${i+1}. ${s[0]} ${s[1]}</div>`);   
+                });
+            },
+            "json"
+        );
+        $("#form").submit(function (e) { 
+            e.preventDefault();
+            let form=new FormData(this)
+            form=formToDic(form)
+            if(form.destinateur==""){
+                alert("ID de l'etudiant!")
+            }else{
+                $.post("/insert/message", form,
+                    function (data, textStatus, jqXHR) {
+                        console.log(data);
+                    },
+                    "json"
+                );
+            }
+            
+        });
+        function student(id) {
+            message()
+            let e=etudiants[id]
+            $("#destinateur").text(e[0]+" "+e[1]);
+            $("input").val(e[3]);
+            $(".messages>p").html("Messages decryptes par la clef de <strong style='color:pink;text-transform:capitalize'>"+e[0]+"</strong>");
+            console.log();
+        }
+        function message() {
+            $(".messages>div").html();
+            $.get("/select/message/0",
+            function (data, textStatus, jqXHR) {
+                data.reverse().forEach(m => {
+                    $(".messages>div").append("<span>"+m[1]+"</span>");
+                });
+            },
+            ""
+        );
+        }
+        message()
+    </script>
+</body>
+</html>
